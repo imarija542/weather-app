@@ -4,40 +4,52 @@ import "./App.css";
 function App() {
   const [weather, setWeather] = useState(null);
   const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [unit, setUnit] = useState("metric");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   const getWeatherIcon = (code) => {
-    if (code >= 1 && code <= 3) return "/icon-overcast.webp";
+    if (code === 0) return "/icon-sunny.webp";
+    if (code >= 1 && code <= 3) return "/icon-partly-cloudy.webp";
     if (code >= 45 && code <= 48) return "/icon-fog.webp";
     if (code >= 51 && code <= 57) return "/icon-drizzle.webp";
-    return "/icon-sun.svg";
+    if (code >= 61 && code <= 67) return "/icon-rain.webp";
+    if (code >= 71 && code <= 77) return "/icon-snow.webp";
+    if (code >= 95) return "/icon-storm.webp";
+    return "/icon-overcast.webp";
   };
 
-  const fetchWeather = async (cityName) => {
-    setLoading(true);
-    setError(false);
-    try {
-      const geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${cityName}&count=1&language=en&format=json`,
-      );
-      const geoData = await geoRes.json();
-
-      if (!geoData.results) {
-        setError(true);
-        setLoading(false);
-        return;
+  const handleInputChange = async (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    if (value.length > 2) {
+      try {
+        const res = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${value}&count=5&language=en&format=json`,
+        );
+        const data = await res.json();
+        setSuggestions(data.results || []);
+      } catch (err) {
+        console.error("Geocoding error", err);
       }
-      const { latitude, longitude, name, country } = geoData.results[0];
+    } else {
+      setSuggestions([]);
+    }
+  };
 
+  const fetchWeather = async (lat, lon, name, country) => {
+    setLoading(true);
+    setSuggestions([]);
+    setSearch("");
+    try {
       const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`,
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`,
       );
-      const weatherData = await weatherRes.json();
-
-      setWeather({ ...weatherData, cityName: name, country });
+      const data = await weatherRes.json();
+      setWeather({ ...data, cityName: name, country });
+      setError(false);
     } catch (err) {
       setError(true);
     } finally {
@@ -46,51 +58,54 @@ function App() {
   };
 
   useEffect(() => {
-    fetchWeather("Zagreb");
+    fetchWeather(45.81, 15.97, "Zagreb", "Croatia");
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (search.trim()) fetchWeather(search);
-  };
-
-  const convertTemp = (temp) => {
-    if (unit === "metric") return Math.round(temp);
-    return Math.round((temp * 9) / 5 + 32);
-  };
+  const convertTemp = (temp) =>
+    unit === "metric" ? Math.round(temp) : Math.round((temp * 9) / 5 + 32);
 
   return (
     <div className={`app ${isDarkMode ? "dark" : "light"}`}>
       <div className="bg-wrapper">
         <header className="header">
-          <img
-            src={isDarkMode ? "/logo-dark-theme.svg" : "/logo-light-theme.svg"}
-            className="logo"
-            alt="Logo"
-          />
+          <div className="logo-container">
+            <img src="/logo.svg" className="logo-img" alt="SkyCast" />
+            <span className="logo-text">SkyCast Weather</span>
+          </div>
+
           <div className="search-area">
-            <form onSubmit={handleSearch} className="search-bar">
-              <input
-                type="text"
-                placeholder="Search city..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <button type="submit" className="search-btn">
-                {loading ? (
-                  <img src="/icon-loading.svg" className="spin" alt="" />
-                ) : (
-                  "Search"
-                )}
-              </button>
-            </form>
+            <div className="search-wrapper">
+              <div className="search-bar">
+                <img src="/icon-search.svg" alt="" className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search city..."
+                  value={search}
+                  onChange={handleInputChange}
+                />
+              </div>
+              {suggestions.length > 0 && (
+                <ul className="dropdown">
+                  {suggestions.map((s) => (
+                    <li
+                      key={s.id}
+                      onClick={() =>
+                        fetchWeather(s.latitude, s.longitude, s.name, s.country)
+                      }
+                    >
+                      <strong>{s.name}</strong>, {s.country}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <button
               className="theme-toggle"
               onClick={() => setIsDarkMode(!isDarkMode)}
             >
               <img
                 src={isDarkMode ? "/icon-sun.svg" : "/icon-moon.svg"}
-                alt="theme"
+                alt="Toggle Theme"
               />
             </button>
           </div>
@@ -99,7 +114,7 @@ function App() {
         <main className="container">
           {loading && (
             <div className="state-screen">
-              <img src="/icon-loading.svg" className="main-spinner" alt="" />
+              <img src="/icon-loading.svg" className="spin" alt="" />
               <p>Fetching weather data...</p>
             </div>
           )}
@@ -108,9 +123,12 @@ function App() {
             <div className="state-screen">
               <img src="/icon-error.svg" alt="" />
               <h2>No results found</h2>
-              <p>
-                We couldn't find "{search}". Check the spelling and try again.
-              </p>
+              <button
+                onClick={() => fetchWeather(45.81, 15.97, "Zagreb", "Croatia")}
+                className="retry-btn"
+              >
+                <img src="/icon-retry.svg" alt="" /> Try again
+              </button>
             </div>
           )}
 
@@ -151,7 +169,7 @@ function App() {
                   <div className="weather-hero">
                     <img
                       src={getWeatherIcon(weather.current.weather_code)}
-                      alt="icon"
+                      alt=""
                       className="main-icon"
                     />
                     <span className="degree">
@@ -171,7 +189,7 @@ function App() {
                       <strong>{weather.current.relative_humidity_2m}%</strong>
                     </div>
                     <div className="detail">
-                      <span>Wind</span>
+                      <span>Wind speed</span>
                       <strong>
                         {Math.round(weather.current.wind_speed_10m)} km/h
                       </strong>
@@ -183,6 +201,27 @@ function App() {
                   </div>
                 </div>
               </div>
+
+              <section className="hourly-section">
+                <h2>Hourly Forecast</h2>
+                <div className="hourly-scroll">
+                  {weather.hourly.time.slice(0, 24).map((time, i) => (
+                    <div key={time} className="hourly-item">
+                      <span className="h-time">
+                        {new Date(time).getHours()}:00
+                      </span>
+                      <img
+                        src={getWeatherIcon(weather.hourly.weather_code[i])}
+                        alt=""
+                        className="h-icon"
+                      />
+                      <strong>
+                        {convertTemp(weather.hourly.temperature_2m[i])}°
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
               <section className="forecast-section">
                 <h2>7-Day Forecast</h2>
