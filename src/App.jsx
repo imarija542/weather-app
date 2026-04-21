@@ -133,124 +133,126 @@ function App() {
           )}
 
           {weather && !loading && !error && (
-            <>
-              <div className="main-card">
-                <img src="/bg-today-large.svg" className="card-bg" alt="" />
-                <div className="card-content">
-                  <div className="card-top">
-                    <div className="location">
-                      <h1>
-                        {weather.cityName}, {weather.country}
-                      </h1>
-                      <p>
-                        {new Date().toLocaleDateString("en-GB", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </p>
+            <div className="weather-layout">
+              <div className="main-content">
+                <div className="main-card">
+                  <img src="/bg-today-large.svg" className="card-bg" alt="" />
+                  <div className="card-content">
+                    <div className="card-top">
+                      <div className="location">
+                        <h1>
+                          {weather.cityName}, {weather.country}
+                        </h1>
+                        <p>
+                          {new Date().toLocaleDateString("en-GB", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          })}
+                        </p>
+                      </div>
+                      <div className="unit-toggle">
+                        <button
+                          className={unit === "metric" ? "active" : ""}
+                          onClick={() => setUnit("metric")}
+                        >
+                          °C
+                        </button>
+                        <button
+                          className={unit === "imperial" ? "active" : ""}
+                          onClick={() => setUnit("imperial")}
+                        >
+                          °F
+                        </button>
+                      </div>
                     </div>
-                    <div className="unit-toggle">
-                      <button
-                        className={unit === "metric" ? "active" : ""}
-                        onClick={() => setUnit("metric")}
-                      >
-                        °C
-                      </button>
-                      <button
-                        className={unit === "imperial" ? "active" : ""}
-                        onClick={() => setUnit("imperial")}
-                      >
-                        °F
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="weather-hero">
-                    <img
-                      src={getWeatherIcon(weather.current.weather_code)}
-                      alt=""
-                      className="main-icon"
-                    />
-                    <span className="degree">
-                      {convertTemp(weather.current.temperature_2m)}°
-                    </span>
-                  </div>
+                    <div className="weather-hero">
+                      <img
+                        src={getWeatherIcon(weather.current.weather_code)}
+                        alt=""
+                        className="main-icon"
+                      />
+                      <span className="degree">
+                        {convertTemp(weather.current.temperature_2m)}°
+                      </span>
+                    </div>
 
-                  <div className="details-grid">
-                    <div className="detail">
-                      <span>Feels like</span>
-                      <strong>
-                        {convertTemp(weather.current.apparent_temperature)}°
-                      </strong>
-                    </div>
-                    <div className="detail">
-                      <span>Humidity</span>
-                      <strong>{weather.current.relative_humidity_2m}%</strong>
-                    </div>
-                    <div className="detail">
-                      <span>Wind speed</span>
-                      <strong>
-                        {Math.round(weather.current.wind_speed_10m)} km/h
-                      </strong>
-                    </div>
-                    <div className="detail">
-                      <span>Precipitation</span>
-                      <strong>{weather.current.precipitation}mm</strong>
+                    <div className="details-grid">
+                      <div className="detail">
+                        <span>Feels like</span>
+                        <strong>
+                          {convertTemp(weather.current.apparent_temperature)}°
+                        </strong>
+                      </div>
+                      <div className="detail">
+                        <span>Humidity</span>
+                        <strong>{weather.current.relative_humidity_2m}%</strong>
+                      </div>
+                      <div className="detail">
+                        <span>Wind speed</span>
+                        <strong>
+                          {Math.round(weather.current.wind_speed_10m)} km/h
+                        </strong>
+                      </div>
+                      <div className="detail">
+                        <span>Precipitation</span>
+                        <strong>{weather.current.precipitation}mm</strong>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <section className="forecast-section">
+                  <h2>7-Day Forecast</h2>
+                  <div className="forecast-grid">
+                    {weather.daily.time.map((date, i) => (
+                      <div key={date} className="forecast-item">
+                        <span className="f-day">
+                          {new Date(date).toLocaleDateString("en", {
+                            weekday: "short",
+                          })}
+                        </span>
+                        <img
+                          src={getWeatherIcon(weather.daily.weather_code[i])}
+                          alt=""
+                          className="f-icon"
+                        />
+                        <div className="f-temps">
+                          <strong>
+                            {convertTemp(weather.daily.temperature_2m_max[i])}°
+                          </strong>
+                          <span className="min">
+                            {convertTemp(weather.daily.temperature_2m_min[i])}°
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
 
-              <section className="hourly-section">
-                <h2>Hourly Forecast</h2>
-                <div className="hourly-scroll">
-                  {weather.hourly.time.slice(0, 24).map((time, i) => (
-                    <div key={time} className="hourly-item">
+              <aside className="hourly-sidebar">
+                <h2>Hourly</h2>
+                <div className="hourly-column">
+                  {weather.hourly.time.slice(0, 12).map((time, i) => (
+                    <div key={time} className="hourly-row">
                       <span className="h-time">
                         {new Date(time).getHours()}:00
                       </span>
                       <img
                         src={getWeatherIcon(weather.hourly.weather_code[i])}
                         alt=""
-                        className="h-icon"
+                        className="h-icon-small"
                       />
-                      <strong>
+                      <strong className="h-temp">
                         {convertTemp(weather.hourly.temperature_2m[i])}°
                       </strong>
                     </div>
                   ))}
                 </div>
-              </section>
-
-              <section className="forecast-section">
-                <h2>7-Day Forecast</h2>
-                <div className="forecast-grid">
-                  {weather.daily.time.map((date, i) => (
-                    <div key={date} className="forecast-item">
-                      <span className="f-day">
-                        {new Date(date).toLocaleDateString("en", {
-                          weekday: "short",
-                        })}
-                      </span>
-                      <img
-                        src={getWeatherIcon(weather.daily.weather_code[i])}
-                        alt=""
-                        className="f-icon"
-                      />
-                      <div className="f-temps">
-                        <strong>
-                          {convertTemp(weather.daily.temperature_2m_max[i])}°
-                        </strong>
-                        <span className="min">
-                          {convertTemp(weather.daily.temperature_2m_min[i])}°
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </>
+              </aside>
+            </div>
           )}
         </main>
       </div>

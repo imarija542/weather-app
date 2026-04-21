@@ -256,6 +256,91 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+.weather-layout {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.main-content {
+  flex: 3;
+}
+
+.hourly-sidebar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-height: 850px;
+}
+
+.dark .hourly-sidebar {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hourly-sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.hourly-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.hourly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  transition: 0.2s;
+}
+
+.dark .hourly-row {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hourly-row:hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.h-icon-small {
+  width: 35px;
+}
+
+.h-time {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 45px;
+}
+
+.h-temp {
+  font-size: 16px;
+  min-width: 35px;
+  text-align: right;
+}
+
+@media (max-width: 1000px) {
+  .weather-layout {
+    flex-direction: column;
+  }
+  .hourly-sidebar {
+    width: 100%;
+    max-height: none;
+  }
+  .hourly-column {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
 .h-icon {
   width: 40px;
   margin: 0 auto;
